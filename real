@@ -1,0 +1,315 @@
+#include <iostream>
+#include <conio.h>
+#include <stdlib.h>
+#include <Windows.h>
+#include <time.h> 
+#include <stdio.h>  
+//#include <cstlib>
+
+using namespace std;
+
+#define X 20
+#define Y 20
+
+char grid[X][Y];
+
+int spritex = 10;
+int spritey = 10;
+int spritexDir = -1;
+int spriteyDir = 0;
+
+int tailxDir = -1;
+int tailyDir = 0;
+int spriteTailx = 13;
+int spriteTaily = 10;
+
+int tailLength = 6; //change back to 3
+
+int foodxPos;
+int foodyPos;
+
+bool skip = false;
+int gameSpeed = 500;
+
+int tailArray[20][20][2]; // coord of direction change as well as the direction change
+//int tailArrayRead[2];
+
+
+bool gameRunning = true;
+
+void initGrid()
+{
+	for (int x = 0; x < X; x = x + 1)
+	{
+		for (int y = 0; y < Y; y = y + 1)
+		{
+			grid[x][y] = ' ';
+		}
+	}
+
+	for (int i = 10; i < (tailLength + spritex); i++) // draws the snake at the beginning of the game 
+	{
+		grid[i][spritey] = 'O';
+	}
+
+}
+void initTailGrid()
+{
+	for (int x = 0; x < X; x = x + 1)
+	{
+		for (int y = 0; y < Y; y = y + 1)
+		{
+			for (int z = 0; z < 2; z = z + 1)
+			{
+
+				tailArray[x][y][z] = 0;// idk what value i should set it as so it doesn't get read 
+			}
+		}
+	}
+}
+
+void addFood()
+{
+	srand(time(NULL)); // not sure this should be run every time 
+
+	do
+	{
+		foodxPos = rand() % 18 + 2; // these  values should be changed 
+		foodyPos = rand() % 18 + 2;
+	} while (grid[foodxPos][foodyPos] == 'O'); //loops as long as the coords of the cell it generates have an O in it
+}
+
+void increaseTail()
+{
+	if (spritex == foodxPos && spritey == foodyPos)//needs to see whether just he coordinates are the same and ot the value of the cell
+	{
+
+		grid[foodxPos][foodyPos] = ' ';
+		addFood();
+
+
+		tailLength++;
+		gameSpeed = gameSpeed - 20;
+		//gameRunning = false; // quits game for now, later will add tailLentgh and also food should be generated heere
+
+		//fix bug where sprite moves one cell to far before registering a hit
+
+		skip = true;
+	}
+}
+
+void drawSprite()
+{
+	grid[foodxPos][foodyPos] = 'X'; // prints food
+	grid[spriteTailx][spriteTaily] = ' '; // change this to nothing 
+	grid[spritex][spritey] = 'O'; // this is the snakes visual appearance
+	for (int y = 0; y < Y; y = y + 1)
+	{
+		for (int x = 0; x < X; x = x + 1)
+		{
+			cout << grid[x][y] << " ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	// now puts it in the grid after drawing out 
+}
+
+
+
+
+void spriteAdd()
+{
+	// moves sprite in the right X direction 
+	if (spritexDir == 1)
+	{
+		spritex++;
+	}
+	if (spritexDir == -1)
+	{
+		spritex--;
+	}
+
+	// moves sprite in the right Y direction 
+	if (spriteyDir == 1)
+	{
+		spritey++;
+	}
+	if (spriteyDir == -1)
+	{
+		spritey--;
+	}
+
+
+	//remember to set the read cell back to 0 so it doesnt interfere later on 
+
+	if (tailArray[spriteTailx][spriteTaily][0] != 0 || tailArray[spriteTailx][spriteTaily][1] != 0) // also seems inefficient
+	{
+		tailxDir = tailArray[spriteTailx][spriteTaily][0];
+		tailyDir = tailArray[spriteTailx][spriteTaily][1]; //gives the tail a new direction
+
+		tailArray[spriteTailx][spriteTaily][0] = ' ';
+		tailArray[spriteTailx][spriteTaily][1] = ' '; //resets the cells to avoid future interference
+	}
+
+
+	// checks if sprite has hit X border and if it has it resets at the beginning of the grid 
+	if (spritex < 0 && spritexDir == -1) //hits left side
+	{
+		gameRunning = false;
+	}
+
+
+	if (spritex >= 20 && spritexDir == 1)//hits right side
+	{
+		gameRunning = false;
+	}
+
+	// checks if sprite has hit Y border and if it has it resets at the beginning of the grid 
+
+	if (spritey < 0 && spriteyDir == -1)//hits top side
+	{
+		gameRunning = false;
+	}
+
+	if (spritey >= 20 && spriteyDir == 1)//hits bottom side
+	{
+		gameRunning = false; // change these so the game ends and it gives a reason 
+	}
+
+	//could i do a for loop?
+
+	//check if it hits itself
+	if (grid[spritex + spritexDir][spritey + spriteyDir] == 'O') // i dont know why this is wrong but it is 
+	{
+		gameRunning = false;
+	}
+
+}
+
+void tailCheck()
+{
+	// read the tailArray
+
+	//if snakeLength increases this needs to hang behind one turn or spriteTailx can be set to one cell behind
+
+	if (tailxDir == 1)
+	{
+		spriteTailx++;
+	}
+	else if (tailxDir == -1)
+	{
+		spriteTailx--;
+	}
+	else if (tailyDir == 1)
+	{
+		spriteTaily++;
+	}
+	else if (tailyDir == -1)
+	{
+		spriteTaily--;
+	}
+
+}
+void changeDirection()
+{
+	if (GetAsyncKeyState(VK_UP) && spriteyDir != 1) // Y Up
+	{
+		spritexDir = 0;
+		spriteyDir = -1;
+		tailArray[spritex][spritey][0] = spritexDir;
+		tailArray[spritex][spritey][1] = spriteyDir;
+	}
+	if (GetAsyncKeyState(VK_DOWN) && spriteyDir != -1) // Y Down
+	{
+		spritexDir = 0;
+		spriteyDir = 1;
+		tailArray[spritex][spritey][0] = spritexDir;
+		tailArray[spritex][spritey][1] = spriteyDir;
+	}
+	if (GetAsyncKeyState(VK_LEFT) && spritexDir != 1) // X Left
+	{
+		spritexDir = -1;
+		spriteyDir = 0;
+		tailArray[spritex][spritey][0] = spritexDir;
+		tailArray[spritex][spritey][1] = spriteyDir;
+	}
+	if (GetAsyncKeyState(VK_RIGHT) && spritexDir != -1) // X Right
+	{
+		spritexDir = 1;
+		spriteyDir = 0;
+		tailArray[spritex][spritey][0] = spritexDir;
+		tailArray[spritex][spritey][1] = spriteyDir;
+	}
+
+	//fix all this repeat code
+
+
+	// inserts the change of direction into the array ready for the tail part to read
+
+}
+
+int main()
+{
+	addFood();
+	initGrid();
+	initTailGrid();
+
+	//srand(time(NULL));
+
+	//spriteTailx = spritex + (tailLength);
+	//tailxDir = -1;
+
+
+	//spritex = (spritex - tailLength + 1); // pretty bad code really 
+
+	//lastSpritexPos = spritexDir;
+	//lastSpriteyPos = spriteyDir;
+
+	//spriteTaily = spritey;
+
+
+	spriteTailx = spritex + tailLength; //use this bt one for each heading direction inside of the adding tail length
+
+
+
+	while (gameRunning)
+	{
+		changeDirection();
+
+		spriteAdd();
+
+		increaseTail();
+
+		//this code feels very tacked on and also does not directly relate to the variable tailLength
+		if (skip == false)
+		{
+			tailCheck();
+		}
+		drawSprite();
+
+		skip = false;
+/* just for telemetry
+		cout << "tailx = " << spriteTailx << "\n";
+		cout << "taily = " << spriteTaily << "\n";
+		cout << "spritex = " << spritex << "\n";
+		cout << "spritey = " << spritey << "\n";
+
+		cout << "tailxDirection = " << tailxDir << "\n";
+		cout << "tailyDirection = " << tailyDir << "\n";
+
+		cout << "tailLength = " << tailLength << "\n";
+
+		cout << "skip = " << skip << "\n";
+
+		cout << foodxPos;
+		cout << foodyPos;
+*/
+
+		Sleep(gameSpeed); // adds a delay between moves
+		system("CLS");
+
+	}
+
+	cout << "game over" << "\n";
+}
